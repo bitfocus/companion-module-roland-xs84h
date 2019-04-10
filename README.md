@@ -1,1 +1,2 @@
-# companion-module-roland-xs84
+# companion-module-roland-xs84h
+See HELP.md and LICENSE
