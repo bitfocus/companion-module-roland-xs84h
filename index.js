@@ -313,7 +313,7 @@ instance.prototype.destroy = function() {
 instance.prototype.actions = function() {
 	var self = this;
 
-	self.system.emit('instance_actions', self.id, {
+	self.setActions({
 		
 		'inputchannel_video_type': {
 			label: 'Set video input channel signal type',
