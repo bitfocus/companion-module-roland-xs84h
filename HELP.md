@@ -1,11 +1,12 @@
-## Roland XS-84H
+# Roland XS-84H
 This module will allow you to control a Roland XS-82H, XS-83H, XS-84H matrix switcher.
 
-### Configuration
+## Configuration
 * Enter the IP address of the device in the configuration settings.
 * The device will use TCP port 8023.
 
-**Available actions:**
+## Actions
+
 * Set the video input channel signal type
 * Set the video input channel color space
 * Turn on/off HDCP for an input channel
@@ -32,3 +33,21 @@ This module will allow you to control a Roland XS-82H, XS-83H, XS-84H matrix swi
 * Set the EDID for an HDMI input
 * Lock the panel
 * Set the key lock mode of the panel
+
+## Feedbacks
+* Input Channel HDCP is On/Off
+* Output Channel HDCP is On/Off
+* Selected Input Channel Video/Audio/Both is routed to Selected Output Channel
+* Output Channel is On/Off
+
+## Variables
+
+* Model
+* Version
+* Input Types, Color Spaces, HDCP On/Off, Aspect Ratio
+* Output Select, Resolution, HDCP On/Off, Color Spaces, Signal Type
+* Crosspoint Selections (Video, Audio, Output Button Status)
+
+## Presets
+
+* Route Input to Output with Crosspoint Feedback

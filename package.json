@@ -1,6 +1,6 @@
 {
 	"name": "roland-xs84h",
-	"version": "1.0.2",
+	"version": "2.0.0",
 	"api_version": "1.0.0",
 	"keywords": [
 		"Vision Mixer",
@@ -10,7 +10,7 @@
 	"product": "XS-84H",
 	"shortname": "XS-84H",
 	"description": "",
-	"main": "index.js",
+	"main": "src/index.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1"
 	},
