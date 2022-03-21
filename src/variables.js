@@ -100,7 +100,7 @@ module.exports = {
 				let outputResolution = '';
 				let outputResolutionObj = self.CHOICES_OUTPUT_RESOLUTIONS.find((OUTPUT) => OUTPUT.id === self.OUTPUTS_DATA[i].resolution);
 				if (outputResolutionObj) {
-					outputResolution = inputTypeObj.label;
+					outputResolution = outputResolutionObj.label;
 				}
 				self.setVariable('output_' + (i+1) + '_resolution', outputResolution);
 
