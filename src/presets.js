@@ -85,8 +85,8 @@ module.exports = {
 							option: '0'
 						},
 						style: {
-							color: foregroundColorBlack,
-							bgcolor: backgroundColorWhite
+							color: foregroundColor,
+							bgcolor: backgroundColorRed
 						}
 					},
 					{
@@ -96,8 +96,8 @@ module.exports = {
 							option: '1'
 						},
 						style: {
-							color: foregroundColor,
-							bgcolor: backgroundColorRed
+							color: foregroundColorBlack,
+							bgcolor: backgroundColorWhite
 						}
 					}
 				]
