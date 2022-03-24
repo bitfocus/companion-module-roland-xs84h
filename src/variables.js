@@ -7,7 +7,7 @@ module.exports = {
 		let variables = [];
 
 		variables.push({ name: 'model', label: 'Model' });
-		variables.push({ name: 'version', label: 'version' });
+		variables.push({ name: 'version', label: 'Version' });
 
 		for (let i = 0; i < self.INPUTS_DATA.length; i++) {
 			variables.push({ name: 'input_' + (i+1) + '_type', label: 'Input ' + (i+1) + ' Type' });

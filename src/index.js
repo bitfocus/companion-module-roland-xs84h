@@ -22,6 +22,7 @@ function instance(system, id, config) {
 }
 
 instance.prototype.INTERVAL = null; //usd for polling device for feedbacks
+instance.prototype.RATE = 1000; //polling rate
 
 instance.prototype.INPUTS_DATA = [
 	{ channel: '0', inputType: null, colorSpace: null, hdcp: '0', aspect: null},
@@ -283,9 +284,6 @@ instance.prototype.init = function() {
 	self.init_feedbacks();
 	self.init_variables();
 	self.init_presets();
-
-	self.checkFeedbacks();
-	self.checkVariables();
 }
 
 instance.prototype.updateConfig = function(config) {
@@ -298,9 +296,6 @@ instance.prototype.updateConfig = function(config) {
 	self.init_feedbacks();
 	self.init_variables();
 	self.init_presets();
-
-	self.checkFeedbacks();
-	self.checkVariables();
 }
 
 // Return config fields for web config
@@ -352,6 +347,8 @@ instance.prototype.init_tcp = function() {
 	}
 
 	if (self.config.host) {
+		self.log('info', `Opening connection to ${self.config.host}:${self.config.port}`);
+
 		self.socket = new tcp(self.config.host, self.config.port);
 
 		self.socket.on('status_change', function (status, message) {
@@ -366,6 +363,7 @@ instance.prototype.init_tcp = function() {
 
 		self.socket.on('connect', function () {
 			debug('Connected');
+			self.status(self.STATUS_OK);
 			self.startInterval();
 		});
 
@@ -382,6 +380,7 @@ instance.prototype.handleError = function(err) {
 	let self = this;
 
 	let error = err.toString();
+	let printedError = false;
 
 	Object.keys(err).forEach(function(key) {
 		if (key === 'code') {
@@ -389,18 +388,33 @@ instance.prototype.handleError = function(err) {
 				error = 'Unable to communicate with Device. Connection refused. Is this the right IP address? Is it still online?';
 				self.log('error', error);
 				self.status(self.STATUS_ERROR);
+				printedError = true;
+				if (self.socket !== undefined) {
+					self.socket.destroy();
+				}
+			}
+			else if (err[key] === 'ETIMEDOUT') {
+				error = 'Unable to communicate with Device. Connection timed out. Is this the right IP address? Is it still online?';
+				self.log('error', error);
+				self.status(self.STATUS_ERROR);
+				printedError = true;
 				if (self.socket !== undefined) {
 					self.socket.destroy();
 				}
 			}
 		}
 	});
+
+	if (!printedError) {
+		self.log('error', `Error: ${error}`);
+	}
 };
 
 instance.prototype.startInterval = function() {
 	let self = this;
 
-	self.INTERVAL = setInterval(self.getData.bind(this), 5000);
+	self.log('info', `Starting Update Interval: Fetching new data from Device every ${self.RATE}ms.`);
+	self.INTERVAL = setInterval(self.getData.bind(this), self.RATE);
 }
 
 instance.prototype.getData = function() {
@@ -427,89 +441,75 @@ instance.prototype.getData = function() {
 instance.prototype.updateData = function(data) {
 	let self = this;
 
-	let dataPrefix = data.split(':')[0];
-	let dataSuffix = data.split(':')[1].replace(';','').split(',');
-
-	switch(dataPrefix) {
-		case 'ITS':
-			try {
-				for (let i = 0; i < self.INPUTS_DATA.length; i++) {
-					if (self.INPUTS_DATA[i].channel.toString() == dataSuffix[0].toString()) {
-						self.INPUTS_DATA[i].inputType = dataSuffix[1];
-						self.INPUTS_DATA[i].colorSpace = dataSuffix[2];
-						self.INPUTS_DATA[i].hdcp = dataSuffix[3];
-						self.INPUTS_DATA[i].aspectratio = dataSuffix[4];
+	if (data.indexOf(';')) {
+		let dataGroups = data.trim().split(';');
+		for (let j = 0; j < dataGroups.length; j++) {
+			dataGroups[j] = dataGroups[j].trim();
+			if (dataGroups[j] !== 'ACK' && dataGroups[j] !== '') {
+				let dataSet = dataGroups[j].trim().split(':');
+				let dataPrefix = dataSet[0].toString().trim();
+				let dataSuffix = dataSet[1].toString().split(',');
+			
+				//self.log('debug', dataGroups[j]);
+		
+				switch(dataPrefix) {
+					case 'ITS':
+						for (let i = 0; i < self.INPUTS_DATA.length; i++) {
+							if (self.INPUTS_DATA[i].channel.toString() == dataSuffix[0].toString()) {
+								self.INPUTS_DATA[i].inputType = dataSuffix[1].toString();
+								self.INPUTS_DATA[i].colorSpace = dataSuffix[2].toString();
+								self.INPUTS_DATA[i].hdcp = dataSuffix[3].toString();
+								self.INPUTS_DATA[i].aspect = dataSuffix[4].toString();
+								break;
+							}
+						}
 						break;
-					}
-				}
-			}
-			catch(error) {
-				self.log('error', error);
-			}
-			break;
-		case 'OTS':
-			try {
-				for (let i = 0; i < self.OUTPUTS_DATA.length; i++) {
-					if (self.OUTPUTS_DATA[i].channel.toString() == dataSuffix[0].toString()) {
-						self.OUTPUTS_DATA[i].outputSelect = dataSuffix[1];
-						self.OUTPUTS_DATA[i].resolution = dataSuffix[2];
-						self.OUTPUTS_DATA[i].hdcp = dataSuffix[3];
-						self.OUTPUTS_DATA[i].colorSpace = dataSuffix[4];
-						self.OUTPUTS_DATA[i].signal = dataSuffix[5];
+					case 'OTS':
+						for (let i = 0; i < self.OUTPUTS_DATA.length; i++) {
+							if (self.OUTPUTS_DATA[i].channel.toString() == dataSuffix[0].toString()) {
+								self.OUTPUTS_DATA[i].outputSelect = dataSuffix[1].toString();
+								self.OUTPUTS_DATA[i].resolution = dataSuffix[2].toString();
+								self.OUTPUTS_DATA[i].hdcp = dataSuffix[3].toString();
+								self.OUTPUTS_DATA[i].colorSpace = dataSuffix[4].toString();
+								self.OUTPUTS_DATA[i].signal = dataSuffix[5].toString();
+								break;
+							}
+						}
 						break;
-					}
-				}
-			}
-			catch(error) {
-				self.log('error', error);
-			}
-			break;
-		case 'CTS':
-			try {
-				for (let i = 0; i < self.CROSSPOINTS_DATA.length; i++) {
-					if (self.CROSSPOINTS_DATA[i].channel.toString() == dataSuffix[0].toString()) {
-						self.CROSSPOINTS_DATA[i].video = dataSuffix[1];
-						self.CROSSPOINTS_DATA[i].audio = dataSuffix[2];
-						self.CROSSPOINTS_DATA[i].outputStatus = dataSuffix[3];
+					case 'CTS':
+						for (let i = 0; i < self.CROSSPOINTS_DATA.length; i++) {
+							if (self.CROSSPOINTS_DATA[i].channel.toString() == dataSuffix[0].toString()) {
+								self.CROSSPOINTS_DATA[i].video = dataSuffix[1].toString();
+								self.CROSSPOINTS_DATA[i].audio = dataSuffix[2].toString();
+								self.CROSSPOINTS_DATA[i].outputStatus = dataSuffix[3].toString();
+								break;
+							}
+						}
 						break;
-					}
+					case 'KLS':			
+						self.KEYLOCK_MODES_DATA.lockStatus = dataSuffix[0].toString();
+						self.KEYLOCK_MODES_DATA.crossPoint = dataSuffix[1].toString();
+						self.KEYLOCK_MODES_DATA.switchMode = dataSuffix[2].toString();
+						self.KEYLOCK_MODES_DATA.menuExit = dataSuffix[3].toString();
+						self.KEYLOCK_MODES_DATA.cursorValue = dataSuffix[4].toString();
+						self.KEYLOCK_MODES_DATA.crossNoInput = dataSuffix[5].toString();
+						self.KEYLOCK_MODES_DATA.crossOff = dataSuffix[6].toString();
+						self.KEYLOCK_MODES_DATA.crossOutput1 = dataSuffix[7].toString();
+						self.KEYLOCK_MODES_DATA.crossOutput2 = dataSuffix[8].toString();
+						self.KEYLOCK_MODES_DATA.crossOutput3 = dataSuffix[9].toString();
+						self.KEYLOCK_MODES_DATA.crossOutput4 = dataSuffix[10].toString();
+						break;
+					case 'VER':
+						self.MODEL = dataSuffix[0].toString();
+						self.VERSION = dataSuffix[1].toString();
+						break;
 				}
-			}
-			catch(error) {
-				self.log('error', error);
-			}
-			break;
-		case 'KLS':
-			try {				
-				self.KEYLOCK_MODES_DATA.lockStatus = dataSuffix[0];
-				self.KEYLOCK_MODES_DATA.crossPoint = dataSuffix[1];
-				self.KEYLOCK_MODES_DATA.switchMode = dataSuffix[2];
-				self.KEYLOCK_MODES_DATA.menuExit = dataSuffix[3];
-				self.KEYLOCK_MODES_DATA.cursorValue = dataSuffix[4];
-				self.KEYLOCK_MODES_DATA.crossNoInput = dataSuffix[5];
-				self.KEYLOCK_MODES_DATA.crossOff = dataSuffix[6];
-				self.KEYLOCK_MODES_DATA.crossOutput1 = dataSuffix[7];
-				self.KEYLOCK_MODES_DATA.crossOutput2 = dataSuffix[8];
-				self.KEYLOCK_MODES_DATA.crossOutput3 = dataSuffix[9];
-				self.KEYLOCK_MODES_DATA.crossOutput4 = dataSuffix[10];
-			}
-			catch(error) {
-				self.log('error', error);
-			}
-			break;
-		case 'VER':
-			try {
-				self.MODEL = dataSuffix[0];
-				self.VERSION = dataSuffix[1];
-			}
-			catch(error) {
-				self.log('error', error);
-			}
-			break;
-	}
-
-	self.checkFeedbacks();
-	self.checkVariables();
+			}			
+		}
+	
+		self.checkFeedbacks();
+		self.checkVariables();
+	}	
 };
 
 // ##########################

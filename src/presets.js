@@ -4,7 +4,9 @@ module.exports = {
 		let presets = [];
 
 		const foregroundColor = self.rgb(255, 255, 255) // White
+		const foregroundColorBlack = self.rgb(0, 0, 0) // Black
 		const backgroundColorRed = self.rgb(255, 0, 0) // Red
+		const backgroundColorWhite = self.rgb(255, 255, 255) // White
 
 		for (let i = 0; i < self.CHOICES_INPUTS.length; i++) {
 			for (let j = 0; j < self.CHOICES_OUTPUTS.length; j++) {
@@ -43,7 +45,64 @@ module.exports = {
 					]
 				})
 			}
-		}		
+		}
+		
+		for (let j = 0; j < self.CHOICES_OUTPUTS.length; j++) {
+			presets.push({
+				category: 'Outputs',
+				label: 'Turn Output ' + (j+1) + ' On/Off',
+				bank: {
+					style: 'text',
+					text: 'OUT ' + (j+1),
+					size: '14',
+					color: '16777215',
+					bgcolor: self.rgb(0, 0, 0),
+					latch: true
+				},
+				actions: [
+					{
+						action: 'outputchannel_onoff',
+						options: {
+							output: j.toString(),
+							value: '1'
+						}
+					}
+				],
+				release_actions: [
+					{
+						action: 'outputchannel_onoff',
+						options: {
+							output: j.toString(),
+							value: '0'
+						}
+					}
+				],
+				feedbacks: [
+					{
+						type: 'outputStatus',
+						options: {
+							output: j.toString(),
+							option: '0'
+						},
+						style: {
+							color: foregroundColorBlack,
+							bgcolor: backgroundColorWhite
+						}
+					},
+					{
+						type: 'outputStatus',
+						options: {
+							output: j.toString(),
+							option: '1'
+						},
+						style: {
+							color: foregroundColor,
+							bgcolor: backgroundColorRed
+						}
+					}
+				]
+			})
+		}
 	
 		return presets;
 	}
