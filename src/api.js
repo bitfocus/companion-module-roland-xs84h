@@ -74,7 +74,7 @@ module.exports = {
 		let self = this
 
 		self.log('debug', `Starting Update Interval: Fetching new data from Device every ${self.RATE}ms.`)
-		self.INTERVAL = setInterval(self.getData.bind(this), self.RATE)
+		self.INTERVAL = setInterval(self.getData.bind(self), self.RATE)
 	},
 
 	getData() {
