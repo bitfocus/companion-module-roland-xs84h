@@ -180,7 +180,7 @@ module.exports = {
 		let self = this
 
 		if (cmd !== undefined) {
-			if (self.socket !== undefined && self.socket.connected) {
+			if (self.socket !== undefined && self.socket.isConnected) {
 				self.socket.send(cmd)
 			} else {
 				self.log('debug', 'Socket not connected :(')
