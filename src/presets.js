@@ -24,7 +24,7 @@ module.exports = {
 					},
 					actions: [
 						{
-							action: 'outputchannel_inputchannel_audioandvideo',
+							actionId: 'outputchannel_inputchannel_audioandvideo',
 							options: {
 								output: j.toString(),
 								input: i.toString(),
@@ -33,7 +33,7 @@ module.exports = {
 					],
 					feedbacks: [
 						{
-							type: 'crosspoint',
+							feedbackId: 'crosspoint',
 							options: {
 								input: i.toString(),
 								output: j.toString(),
