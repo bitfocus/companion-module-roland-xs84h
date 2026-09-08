@@ -51,7 +51,7 @@ class RolandXS84HInstance extends InstanceBase {
 			this.socket.destroy()
 		}
 
-		clearInterval(this.INTERVAL)
+		this.stopInterval()
 
 		this.debug('destroy', this.id)
 	}

@@ -4,6 +4,8 @@ module.exports = {
 	initConnection() {
 		let self = this
 
+		self.stopInterval()
+
 		if (self.socket !== undefined) {
 			self.socket.destroy()
 			delete self.socket
@@ -16,11 +18,18 @@ module.exports = {
 		if (self.config.host) {
 			self.log('info', `Opening connection to ${self.config.host}:${self.config.port}`)
 
-			self.socket = new TCPHelper(self.config.host, self.config.port)
+			self.socket = new TCPHelper(self.config.host, self.config.port, {
+				reconnect: true,
+			})
+
+			self.socket.on('status_change', function (status, message) {
+				self.updateStatus(status, message)
+				if (status !== InstanceStatus.Ok) self.stopInterval()
+			})
 
 			self.socket.on('error', function (err) {
 				self.updateStatus(InstanceStatus.ConnectionFailure)
-				clearInterval(self.INTERVAL)
+				self.stopInterval()
 				self.handleError(err)
 			})
 
@@ -50,17 +59,15 @@ module.exports = {
 						'Unable to communicate with Device. Connection refused. Is this the right IP address? Is it still online?'
 					self.log('error', error)
 					printedError = true
-					if (self.socket !== undefined) {
-						self.socket.destroy()
-					}
 				} else if (err[key] === 'ETIMEDOUT') {
 					error =
 						'Unable to communicate with Device. Connection timed out. Is this the right IP address? Is it still online?'
 					self.log('error', error)
 					printedError = true
-					if (self.socket !== undefined) {
-						self.socket.destroy()
-					}
+				} else if (err[key] === 'ECONNRESET') {
+					error = 'The connection was reset. Waiting for the device to become available again.'
+					self.log('warn', error)
+					printedError = true
 				}
 			}
 		})
@@ -73,14 +80,24 @@ module.exports = {
 	startInterval() {
 		let self = this
 
+		self.stopInterval()
 		self.log('debug', `Starting Update Interval: Fetching new data from Device every ${self.RATE}ms.`)
 		self.INTERVAL = setInterval(self.getData.bind(self), self.RATE)
+	},
+
+	stopInterval() {
+		let self = this
+
+		if (self.INTERVAL !== undefined) {
+			clearInterval(self.INTERVAL)
+			self.INTERVAL = undefined
+		}
 	},
 
 	getData() {
 		let self = this
 
-		if (self.socket) {
+		if (self.socket?.isConnected) {
 			for (let i = 0; i < 8; i++) {
 				self.socket.send('ITS:' + i + ';')
 			}
